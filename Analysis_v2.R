@@ -15,6 +15,8 @@ library(YieldCurve)
 library(magick)
 library(scales)
 
+set.seed(444)
+
 gg_color_hue <- function(n) {
   hues = seq(15, 375, length = n + 1)
   hcl(h = hues, l = 65, c = 100)[1:n]
@@ -885,8 +887,13 @@ openxlsx::write.xlsx(list_countries,file=paste0(output_dir,"DIFFS_loadings.xlsx"
 ##### ECONOMETRICS #######################
 ##########################################
 
-## IT
-NSparameters <- NSparameters_IT
+for (i in c("IT","ES","DE","FR")) {
+  
+print(i)
+NSparameters <- get(paste0("NSparameters_",i))
+
+#NSparameters <- NSparameters_IT
+
 ndiffs(NSparameters[,1],alpha = 0.05, test = c("adf"))
 ndiffs(NSparameters[,2],alpha = 0.05, test = c("adf"))
 ndiffs(NSparameters[,3],alpha = 0.05, test = c("adf"))
@@ -895,15 +902,19 @@ ndiffs(NSparameters[,4],alpha = 0.05, test = c("adf"))
 ndiffs(final_dataset$EXCESS.LIQUIDITY,alpha = 0.05, test = c("adf"))
 ndiffs(final_dataset$EUORDEPO.Index,alpha = 0.05, test = c("adf"))
 
-series_parameters_IT <- NSparameters_IT
-series_parameters_DE <- NSparameters_DE
-series_parameters_FR <- NSparameters_FR
-series_parameters_ES <- NSparameters_ES
+# series_parameters_IT <- NSparameters_IT
+# series_parameters_DE <- NSparameters_DE
+# series_parameters_FR <- NSparameters_FR
+# series_parameters_ES <- NSparameters_ES
+# 
 
-series_parameters_diff_IT <- diff(NSparameters_IT,1)
-series_parameters_diff_DE <- diff(NSparameters_DE,1)
-series_parameters_diff_FR <- diff(NSparameters_FR,1)
-series_parameters_diff_ES <- diff(NSparameters_ES,1)
+series_parameters_diff <- diff(NSparameters,1)
+# series_parameters_diff_IT <- diff(NSparameters_IT,1)
+# series_parameters_diff_DE <- diff(NSparameters_DE,1)
+# series_parameters_diff_FR <- diff(NSparameters_FR,1)
+# series_parameters_diff_ES <- diff(NSparameters_ES,1)
+
+series_parameters <- NSparameters
 
 names(series_parameters_diff) <- paste0(names(series_parameters_diff),"_diff")
 final_dataset_ts <- xts(final_dataset,order.by = final_dataset$DATE)
@@ -911,8 +922,11 @@ final_dataset_ts <- xts(final_dataset,order.by = final_dataset$DATE)
 # nrow(series_parameters)
 # nrow(VAR_dataset$EXCESS.LIQUIDITY)
 
-VAR_dataset <- merge.xts(series_parameters_IT,series_parameters_DE,series_parameters_FR,series_parameters_ES,final_dataset_ts,join="left")
+#VAR_dataset <- merge.xts(series_parameters_IT,series_parameters_DE,series_parameters_FR,series_parameters_ES,final_dataset_ts,join="left")
+VAR_dataset <- merge.xts(series_parameters,final_dataset_ts,join="left")
+
 #VAR_dataset <- merge.xts(VAR_dataset,series_parameters_diff,join="left")
+
 nrow(VAR_dataset)
 
 VAR_dataset$liq_diff <- diff(VAR_dataset$EXCESS.LIQUIDITY,1)
@@ -1019,6 +1033,12 @@ IRF_liq_beta1_liq <- cbind(data.frame(IRF_liq_beta1_liq$irf),data.frame(IRF_liq_
 IRF_liq_beta2_liq <- cbind(data.frame(IRF_liq_beta2_liq$irf),data.frame(IRF_liq_beta2_liq$Lower),data.frame(IRF_liq_beta2_liq$Upper))
 
 end_liq <- data.frame(cbind(IRF_liq_beta0_liq,IRF_liq_beta1_liq,IRF_liq_beta2_liq))
+
+all_models <- list("end"=end,"end_xannounc"=end_xannounc,"end_noannounc"=end_noannounc,"end_liq"=end_liq)
+
+assign(paste0("liq_",i),all_models)
+
+}
 
 openxlsx::write.xlsx()
 
